@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="Tests"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+	<classpathentry kind="lib" path="/Users/sumeet/Downloads/mysql-connector-java-5.1.25/mysql-connector-java-5.1.25-bin.jar"/>
+	<classpathentry kind="lib" path="/Users/sumeet/Documents/workspace/AudioFeaturesExtractor/libs/ajt-2.9.jar"/>
+	<classpathentry kind="lib" path="/Users/sumeet/Documents/workspace/AudioFeaturesExtractor/libs/commons-math-1.2.jar"/>
+	<classpathentry kind="lib" path="/Users/sumeet/Documents/workspace/AudioFeaturesExtractor/libs/Jama-1.0.2.jar"/>
+	<classpathentry kind="lib" path="/Users/sumeet/Documents/workspace/AudioFeaturesExtractor/libs/javaml-0.1.7.jar"/>
+	<classpathentry kind="lib" path="/Users/sumeet/Documents/workspace/AudioFeaturesExtractor/libs/libsvm.jar"/>
+	<classpathentry kind="lib" path="/Users/sumeet/Documents/workspace/AudioFeaturesExtractor/libs/weka.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

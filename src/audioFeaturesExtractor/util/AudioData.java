@@ -1,5 +1,9 @@
 package audioFeaturesExtractor.util;
 
+import java.util.Arrays;
+
+import weka.core.parser.java_cup.internal_error;
+
 
 public class AudioData {
 
@@ -21,6 +25,13 @@ public class AudioData {
 	public short [] getRawAudio() {
 		return rawAudio;
 	}
+	
+	public short [] getRawAudio(int percentage) {
+		int pctVal = (rawAudio.length*percentage)/100;
+		short [] arCopy = Arrays.copyOf(getRawAudio(), pctVal);
+		return arCopy;
+	}
+	
 	void setRawAudio(short [] rawAudio) {
 		this.rawAudio = rawAudio;
 	}
