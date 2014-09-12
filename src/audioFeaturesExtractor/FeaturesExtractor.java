@@ -14,6 +14,7 @@ import audioFeaturesExtractor.math.MFCC;
 import audioFeaturesExtractor.util.AudioData;
 import audioFeaturesExtractor.util.Constants;
 import audioFeaturesExtractor.util.FileReader;
+import audioFeaturesExtractor.util.Logger;
 
 public class FeaturesExtractor {
 	private MFCC featureMFCC;
@@ -125,66 +126,69 @@ public class FeaturesExtractor {
 	}
 
 	public static void extractFeatures(String directoryPath,
-			int shreddingPercentage, int sampleLengthPct) {
+			String featuresDirectoryPath,
+			int shreddingPercentage, 
+			int sampleLengthPct, 
+			int audioFrameLength) {
 
 		File fileDir = new File(directoryPath);
 		File[] filesList = fileDir.listFiles();
 		FileReader reader = new FileReader();
 
 		for (File file : filesList) {
-			if (!file.getName().contains("features")
-					&& !file.getName().contains("audible")) {
-
 				// writeDataToAudibleFormat(reader, fileDir, file);
 				try {
+					
 					List<AudioData> rawAudioList = reader.readFile(file
-							.getAbsolutePath());
-					writeFeatures(fileDir, file, rawAudioList,
+							.getAbsolutePath(), audioFrameLength);
+					
+					extractAndWriteFeatures(fileDir, file, featuresDirectoryPath, rawAudioList,
 							shreddingPercentage, sampleLengthPct);
 
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 					System.out.println(file.getAbsolutePath());
 				} catch (Exception e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 					System.out.println(file.getAbsolutePath());
 				}
 			}
-		}
-
 	}
 
-	private static void writeFeatures(File fileDir, File file,
-			List<AudioData> rawAudioList, int shreddingPercentage, int sampleLengthPct)
+	private static void extractAndWriteFeatures(File fileDir, File file,
+			String featuresDirectoryPath,
+			List<AudioData> rawAudioList,
+			int shreddingPercentage,
+			int sampleLength)
 			throws IOException {
 		FeaturesExtractor featuresExtractor = new FeaturesExtractor();
 		// write the features in a file
-		File flToWrite = new File(fileDir, "features" + file.getName());
+		File flToWrite = new File(featuresDirectoryPath, "Features_" + file.getName());
 		FileWriter writer = new FileWriter(flToWrite);
 
-		System.out.println(rawAudioList.size());
-
-		int shreddingParam = 100 / (100 - shreddingPercentage);
+		Logger.logMessageOnConsole("Extracting features from "+ file.getName() + " with size " +rawAudioList.size());
+		//int shreddingParam = 100 / (100 - shreddingPercentage);
 
 		for (int i = 0; i < rawAudioList.size(); i++) {
-			if (i % shreddingParam == 0) {
+			//if (i % shreddingParam == 0) {
 				AudioData audioData = rawAudioList.get(i);
-				featuresExtractor.extractFeatures(audioData,sampleLengthPct);
+				featuresExtractor.extractFeatures(audioData,sampleLength);
 
 				if (writer != null) {
-					String str = Arrays
-							.toString(audioData.getFeatureCepstrum());
-					// audioData.getTime()+","+
-					writer.write(str.substring(1, str.length() - 1) + ","
-							+ file.getName());
-					writer.append('\n');
-					writer.flush();
+					double [] cepstrum = audioData.getFeatureCepstrum();
+					if(!Double.isInfinite(cepstrum[0]) && !Double.isNaN(cepstrum[0])){
+						String str = Arrays
+								.toString(cepstrum);
+						// audioData.getTime()+","+
+						String labelString = file.getName().split("_")[file.getName().split("_").length -1];
+						writer.write(str.substring(1, str.length() - 1) 
+								+ ","
+								+ labelString);
+						writer.append('\n');
+						writer.flush();	
+					}
 				}
-				System.out.println(Arrays.toString(audioData
-						.getFeatureCepstrum()));
-			}
+			//}
 		}
 
 		writer.close();

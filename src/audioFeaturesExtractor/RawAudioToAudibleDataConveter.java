@@ -7,51 +7,47 @@ import java.util.List;
 
 import audioFeaturesExtractor.util.AudioData;
 import audioFeaturesExtractor.util.FileReader;
+import audioFeaturesExtractor.util.Logger;
 import audioFeaturesExtractor.util.ShortToByteConverter;
 
 public class RawAudioToAudibleDataConveter {
-	public static void writeDataToAudibleFormat(String directoryPath) {
+	public static void writeDataToAudibleFormat(String rawFileDirectoryPath,
+			String audibleFilesDirPath) {
 
-		File fileDir = new File(directoryPath);
+		File fileDir = new File(rawFileDirectoryPath);
 		File[] filesList = fileDir.listFiles();
 		FileReader reader = new FileReader();
 
 		for (File file : filesList) {
-			if (!file.getName().contains("features")
-					&& !file.getName().contains("audible")) {
+			try {
+				List<AudioData> rawAudioList = reader.readFile(file
+						.getAbsolutePath());
+				
+				File flToWrite = new File(audibleFilesDirPath, "Audible_"
+						+ file.getName());
+				FileOutputStream stream = new FileOutputStream(flToWrite);
+				
+				Logger.logMessageOnConsole("Converting to audible format "+ file.getName()+ " of size "+ rawAudioList.size());
 
-				try {
-					List<AudioData> rawAudioList = reader.readFile(file
-							.getAbsolutePath());
-					// write the features in a file
-					File flToWrite = new File(fileDir, "audible"
-							+ file.getName());
-					FileOutputStream stream = new FileOutputStream(flToWrite);
-					System.out.println(rawAudioList.size());
+				for (AudioData audioData : rawAudioList) {
 
-					for (AudioData audioData : rawAudioList) {
-
-						if (stream != null) {
-							byte[] bytes = ShortToByteConverter
-									.convert(audioData);
-							stream.write(bytes);
-						}
+					if (stream != null && audioData.getRawAudio()!=null) {
+						byte[] bytes = ShortToByteConverter.convert(audioData);
+						stream.write(bytes);
 					}
-					stream.flush();
-					stream.close();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} finally {
-
 				}
+				
+				stream.flush();
+				stream.close();
+			} catch (IOException e) {
+				System.out.println(file.getName());
+				e.printStackTrace();
+			} catch (Exception e) {
+				System.out.println(file.getName());
+				e.printStackTrace();
+			} finally {
+
 			}
 		}
-
 	}
-
-
 }

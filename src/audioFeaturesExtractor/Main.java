@@ -1,25 +1,7 @@
 package audioFeaturesExtractor;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
-import libsvm.LibSVM;
-
-import be.abeel.util.Pair;
-import net.sf.javaml.classification.Classifier;
-import net.sf.javaml.classification.evaluation.EvaluateDataset;
-import net.sf.javaml.classification.evaluation.PerformanceMeasure;
-import net.sf.javaml.core.Dataset;
-import net.sf.javaml.sampling.Sampling;
-import net.sf.javaml.tools.data.FileHandler;
-import audioFeaturesExtractor.util.AudioData;
-import audioFeaturesExtractor.util.FileReader;
-import audioFeaturesExtractor.util.ShortToByteConverter;
+import audioFeaturesExtractor.util.Logger;
 
 public class Main {
 
@@ -27,15 +9,67 @@ public class Main {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-
 		System.out.println("app is running");
+		// Pipeline -> preprocess sound data, (convert to audible if needed),
+		// randomize sound, extract features, classification
+		final String RAW_FILES_DIR_PATH = "/users/sumeet/Downloads/ASR/Without_Shredding/Raw_Sound";
+		final String PROCESSED_FILES_DIR_PATH = "/users/sumeet/Downloads/ASR/Without_Shredding/Processed_Sound";
+		final String RANDOMIZED_FILES_DIR_PATH = "/users/sumeet/Downloads/ASR/Without_Shredding/Randomized_Sound";
+		final String AUDIBLE_FILES_DIR_PATH = "/users/sumeet/Downloads/ASR/Without_Shredding/Audible_Sound";
+		final String SOUND_FEATURES_FILES_DIR_PATH = "/users/sumeet/Downloads/ASR/Without_Shredding/Features";
+		// clean and create folders
+		String[] foldersToBeCleaned = { PROCESSED_FILES_DIR_PATH,
+				RANDOMIZED_FILES_DIR_PATH, AUDIBLE_FILES_DIR_PATH,
+				SOUND_FEATURES_FILES_DIR_PATH };
+		
+		String[] foldersToBeCleaned2 = { RANDOMIZED_FILES_DIR_PATH, AUDIBLE_FILES_DIR_PATH,
+				SOUND_FEATURES_FILES_DIR_PATH };
+		
+		int[] subsamplingPercentages = {100, 20};//{ 10, 25, 40, 55 , 70, 85, 100 };//{ 20, 40 };
+													// 100};
+		int[] randomizationWidthPercentages ={0, 100};// { 30, 50, 80 };//{50};//
 
-		// String directoryPath = "/users/sumeet/Downloads/MobiSens_Data";
-		String directoryPath = "/users/sumeet/Downloads/ASR/Without_Shredding";
-		RawAudioToAudibleDataConveter.writeDataToAudibleFormat(directoryPath);
-		FeaturesExtractor.extractFeatures(directoryPath, 0, 100);
-		AsrClassifier.runClassifier(directoryPath);
+		for (int subSamplingPec : subsamplingPercentages) {
+			cleanFolders(foldersToBeCleaned);
+			// drop a percentage of sound
+			Logger.logResultsOnConsole("Subsampling percentage "
+					+ subSamplingPec);
+			RawDataSubSampler.subSampleSoundData(RAW_FILES_DIR_PATH,
+					PROCESSED_FILES_DIR_PATH, subSamplingPec);
+			for (int randomizationPec : randomizationWidthPercentages) {
+				cleanFolders(foldersToBeCleaned2);
+				Logger.logResultsOnConsole("Randomization percentage "
+						+ randomizationPec);
+				// create audible format
+				AudioFramesRandomizer.randomize(PROCESSED_FILES_DIR_PATH,
+						RANDOMIZED_FILES_DIR_PATH, randomizationPec);
+				
+				RawAudioToAudibleDataConveter.writeDataToAudibleFormat(
+						RANDOMIZED_FILES_DIR_PATH, AUDIBLE_FILES_DIR_PATH);
+				// size depending upon data collection frequency (8000 hz)
+//				FeaturesExtractor.extractFeatures(RANDOMIZED_FILES_DIR_PATH,
+//						SOUND_FEATURES_FILES_DIR_PATH, 0, 100, 320);
+//				for (AsrClassifier.Classifiers classfier : AsrClassifier.Classifiers.values()) {
+//					Logger.logResultsOnConsole("Classifier type "
+//							+ classfier.name());
+//					AsrClassifier.runClassifier(SOUND_FEATURES_FILES_DIR_PATH,
+//							classfier);
+//				}
+			}
+		}
+	}
 
+	private static void cleanFolders(String[] paths) {
+		for (String path : paths) {
+			try {
+				File inputDir = new File(path);
+				File[] filesList = inputDir.listFiles();
+				for (File file : filesList) {
+					file.delete();
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 	}
 }
