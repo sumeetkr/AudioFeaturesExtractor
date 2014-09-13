@@ -122,5 +122,14 @@ public class FileReader {
 	    
 	    return datas;
 	}
+	
+	public static short [] readFileFromPath(String filePath){
+		short [] data = new short[0];
+		FileReader reader = new FileReader();
+		data = reader.readRawData(filePath);
+		return data;
+		
+	}
+
 
 }

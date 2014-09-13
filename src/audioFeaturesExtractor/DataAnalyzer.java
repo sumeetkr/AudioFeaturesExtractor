@@ -1,25 +1,22 @@
 package audioFeaturesExtractor;
 
+import java.awt.List;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Queue;
-
-import org.omg.IOP.Codec;
 
 import weka.core.parser.java_cup.internal_error;
 import audioFeaturesExtractor.util.FileReader;
 
 public class DataAnalyzer {
-	private String path = "/Users/sumeet/Downloads/IPS_data/1410396768414.pcm";
-	private static int limit = 500;
-	public DataAnalyzer(){
-	   
-	}
+	private static int noiseThresholdAmplitude = 500;
+	private static int clockLengthGuess = 25;
+	private static int thresholdNoOfZerosToCutSignal = 400;
 	
 	public static short [] lowPassFilter(short [] data){
 		short [] filteredData = data;
 		
 		for (int i = 0; i < filteredData.length; i++) {
-			if(filteredData[i] < limit && filteredData[i] > -1*limit){
+			if(filteredData[i] < noiseThresholdAmplitude && filteredData[i] > -1*noiseThresholdAmplitude){
 				filteredData[i]=0;
 			}
 		}
@@ -29,11 +26,11 @@ public class DataAnalyzer {
 	public static short [] digitilizeData(short [] data){
 		short [] digitalData = data;
 		for (int i = 0; i < digitalData.length; i++) {
-			if(digitalData[i] >= limit){
+			if(digitalData[i] >= noiseThresholdAmplitude){
 				digitalData[i] = 1;
 			}
 			
-			if(digitalData[i] <= -1*limit){
+			if(digitalData[i] <= -1*noiseThresholdAmplitude){
 				digitalData[i] = 0;
 			}
 		}
@@ -52,7 +49,7 @@ public class DataAnalyzer {
 		int endIndex = 0;
 		
 		for (int i = 0; i < digitalSignalData.length; i++) {
-			if(startIndex==0 && i>10 && digitalSignalData[i] != 0){
+			if(startIndex==0 && i>thresholdNoOfZerosToCutSignal && digitalSignalData[i] != 0){
 				
 				//if all j are == 0 before i, then i is the starting index
 				boolean allJsAreZero = true;
@@ -70,7 +67,7 @@ public class DataAnalyzer {
 				
 				//if all j are == 0 before i, then i is the starting index
 				boolean allJsAreZero = true;
-				for (int j = i+1; j < i+10; j++) {
+				for (int j = i+1; j < i+thresholdNoOfZerosToCutSignal; j++) {
 					if(allJsAreZero && digitalSignalData[j] != 0 && j<digitalSignalData.length){
 						allJsAreZero = false;
 					}
@@ -107,7 +104,7 @@ public class DataAnalyzer {
 				repeatationCount++;
 			}else{
 				
-				if(repeatationCount< 18) {
+				if(repeatationCount< clockLengthGuess) {
 					codedValue = codedValue +String.valueOf(lastValue);
 				}else {
 					codedValue = codedValue +String.valueOf(lastValue)+String.valueOf(lastValue);
@@ -119,11 +116,21 @@ public class DataAnalyzer {
 		return codedValue;
 	}
 	
-	public static short [] readFile(String filePath){
-		short [] data = new short[0];
-		FileReader reader = new FileReader();
-		data = reader.readRawData(filePath);
-		return data;
+	public static String binaryToManchesterEncoding(String binaryString){
+		String encodedString = "";
+		ArrayList<Integer> binaryIntegers =new ArrayList<Integer>();
+		for (char chr : binaryString.toCharArray()) {
+			Integer integer = Integer.decode(String.valueOf(chr));
+			binaryIntegers.add(integer);
+		}
 		
+		for (Integer integer : binaryIntegers) {
+			if(integer.intValue() == 0){
+				encodedString = encodedString.concat("10");
+			}else {
+				encodedString = encodedString.concat("01");
+			}
+		}
+		return encodedString;
 	}
 }
