@@ -1,16 +1,12 @@
 package audioFeaturesExtractor;
 
-import java.awt.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import weka.core.parser.java_cup.internal_error;
-import audioFeaturesExtractor.util.FileReader;
-
 public class DataAnalyzer {
-	private static int noiseThresholdAmplitude = 500;
-	private static int clockLengthGuess = 25;
-	private static int thresholdNoOfZerosToCutSignal = 400;
+	private static int noiseThresholdAmplitude = 480;
+	private static int clockLengthGuess = 23;
+	private static int thresholdNoOfZerosToCutSignal = 200;
 	
 	public static short [] lowPassFilter(short [] data){
 		short [] filteredData = data;
@@ -26,35 +22,30 @@ public class DataAnalyzer {
 	public static short [] digitilizeData(short [] data){
 		short [] digitalData = data;
 		for (int i = 0; i < digitalData.length; i++) {
-			if(digitalData[i] >= noiseThresholdAmplitude){
+			if(digitalData[i] >= 0){
 				digitalData[i] = 1;
-			}
-			
-			if(digitalData[i] <= -1*noiseThresholdAmplitude){
+			}else {
 				digitalData[i] = 0;
 			}
+		
 		}
 		
 		return digitalData;
 	}
 	
-	public static short [] getSignalSegment(short [] data){
-		short [] digitalSignalData = data;
-		
-//		String dataString = Arrays.toString(data);
-//		String [] datas = dataString.split("0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-//		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, [1-9]");
+	public static short [] getSignalSegment(short [] filteredData, short [] rawData){
+		short [] filteredSignalData = filteredData;
 		
 		int startIndex = 0;
 		int endIndex = 0;
 		
-		for (int i = 0; i < digitalSignalData.length; i++) {
-			if(startIndex==0 && i>thresholdNoOfZerosToCutSignal && digitalSignalData[i] != 0){
+		for (int i = 0; i < filteredSignalData.length; i++) {
+			if(startIndex==0 && i>thresholdNoOfZerosToCutSignal && filteredSignalData[i] != 0){
 				
 				//if all j are == 0 before i, then i is the starting index
 				boolean allJsAreZero = true;
 				for (int j = i-10; j < i; j++) {
-					if(allJsAreZero && digitalSignalData[j] != 0){
+					if(allJsAreZero && filteredSignalData[j] != 0){
 						allJsAreZero = false;
 					}
 				}
@@ -62,13 +53,13 @@ public class DataAnalyzer {
 			}
 		}
 		
-		for (int i = startIndex; i < digitalSignalData.length; i++) {
-			if(endIndex ==0 && digitalSignalData[i] == 0){
+		for (int i = startIndex; i < filteredSignalData.length; i++) {
+			if(endIndex ==0 && filteredSignalData[i] == 0){
 				
 				//if all j are == 0 before i, then i is the starting index
 				boolean allJsAreZero = true;
 				for (int j = i+1; j < i+thresholdNoOfZerosToCutSignal; j++) {
-					if(allJsAreZero && digitalSignalData[j] != 0 && j<digitalSignalData.length){
+					if(allJsAreZero && filteredSignalData[j] != 0 && j<filteredSignalData.length){
 						allJsAreZero = false;
 					}
 				}
@@ -76,18 +67,18 @@ public class DataAnalyzer {
 			}
 		}
 		
-		short [] signalSegment = Arrays.copyOfRange(data, startIndex, endIndex);
+		short [] signalSegment = Arrays.copyOfRange(rawData, startIndex, endIndex);
 		return signalSegment;
 		
 	}
 	
 	public static short [] getManchesterEncodedValue(short [] data){
 		short [] digitalSignalData = data;
-		String codedValue = getManchesterEncodedString(digitalSignalData);
+		String codedString = getManchesterEncodedString(digitalSignalData);
 		
-		short [] code = new short[codedValue.length()];
-		char [] chars = codedValue.toCharArray();
-		for (int i = 0; i < codedValue.length(); i++) {
+		short [] code = new short[codedString.length()];
+		char [] chars = codedString.toCharArray();
+		for (int i = 0; i < codedString.length(); i++) {
 			code[i] = Short.valueOf(String.valueOf(chars[i]));
 		}
 		
@@ -133,4 +124,51 @@ public class DataAnalyzer {
 		}
 		return encodedString;
 	}
+	
+	public static String manchesterToBinaryDecoding(String manchesterString){
+		String decodedString = "";
+		try {
+			ArrayList<Integer> binaryIntegers =new ArrayList<Integer>();
+			for (char chr : manchesterString.toCharArray()) {
+				Integer integer = Integer.decode(String.valueOf(chr));
+				binaryIntegers.add(integer);
+			}
+			
+			for (int i = 0; i < binaryIntegers.size(); i=i+2) {
+				if(binaryIntegers.get(i).intValue()==0 && binaryIntegers.get(i+1).intValue()==1){
+					decodedString = decodedString.concat("0");
+				}else {
+					decodedString = decodedString.concat("1");
+				}
+			}	
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+		
+		return decodedString;
+	}
+	
+	public static long getLongFromBinary(String binaryString){
+		Long val = Long.parseLong(binaryString,2);
+		return val;
+	}
+	
+	public static String getBeconIdFromDecodedString(String decodedString){
+		String beconIdBinaryString = decodedString.substring(8,decodedString.length()-8);
+		String beaconId = String.valueOf(getLongFromBinary(beconIdBinaryString));
+		
+		return beaconId;
+	}
+	
+	public static double doubleFromBinaryString(String str){
+	    double j=0;
+	    for(int i=0;i<str.length();i++){
+	        if(str.charAt(i)== '1'){
+	         j=j+ Math.pow(2,str.length()-1-i);
+	     }
+
+	    }
+	    return j;
+	}
+
 }

@@ -104,20 +104,24 @@ public class FileReader {
 	    Scanner scanner = null;
 
 	    try {
-	      scanner = new Scanner(new FileInputStream( testFile));
-	      while (scanner.hasNextLine()){
-	    	  String line = scanner.nextLine();
-	    	  //remove the braces []
-	    	  short [] shorts = getShortsFromString(line.substring(1,line.length() -1));
-	    	  datas = shorts; //I expect only single line
-	      }
+	    	if(testFile.exists() && testFile.canRead()){
+	    		scanner = new Scanner(new FileInputStream( testFile));
+	  	      while (scanner.hasNextLine()){
+	  	    	  String line = scanner.nextLine();
+	  	    	  //remove the braces []
+	  	    	  if(line.length()>2){
+	  	    		  short [] shorts = getShortsFromString(line.substring(1,line.length() -1));
+	  		    	  datas = shorts; //I expect only single line  
+	  	    	  }
+	  	      }	
+	    	}
 	    }catch (FileNotFoundException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}catch (Exception e) {
 			Logger.logMessageOnConsole("Exception in readng" + filePath +" " + e.getMessage());
 		}finally{
-	      scanner.close();
+	      if(scanner!= null) scanner.close();
 	    }
 	    
 	    return datas;

@@ -14,22 +14,9 @@ import audioFeaturesExtractor.DataAnalyzer;
 import audioFeaturesExtractor.util.AFEFileWriter;
 import audioFeaturesExtractor.util.FileReader;
 
-public class DataAnalyzerTest {
-
-	private String path1 = "/Users/sumeet/Downloads/IPS_data/1410396768414.pcm";
-	private String path2 = "/Users/sumeet/Downloads/IPS_data/1410396771760.pcm";
-	private String path3 = "/Users/sumeet/Downloads/IPS_data/1410396764662.pcm";
-	private String path4 = "/Users/sumeet/Downloads/IPS_data/1410391391123.pcm";
-	private String path5 = "/Users/sumeet/Downloads/IPS_data/1410391387303.pcm";
-	private String path6 = "/Users/sumeet/Downloads/IPS_data/1410391383485.pcm";
-	private String path7 = "/Users/sumeet/Downloads/IPS_data/1410396778595.pcm";
-	private String path8 = "/Users/sumeet/Downloads/IPS_data/1410396781893.pcm";
-	private String path9 = "/Users/sumeet/Downloads/IPS_data/1410396785379.pcm";
-	private String path10 = "/Users/sumeet/Downloads/IPS_data/1410396789593.pcm";
-	private String path11 = "/Users/sumeet/Downloads/IPS_data/1410396792948.pcm";
+public class DataAnalyzerTest {	
 	
-	
-	private String path = "/Users/sumeet/Downloads/IPS_data/1410396796230.pcm";
+	private String path = "/Users/sumeet/Downloads/IPS_data/1410594745134.pcm";
 	private short [] data;
 	
 	@Before
@@ -61,7 +48,8 @@ public class DataAnalyzerTest {
 	public void testDigitilizeData() {
 		short [] data = FileReader.readFileFromPath(path);
 		short  [] filteredData = DataAnalyzer.lowPassFilter(data);
-		short [] signalData = DataAnalyzer.getSignalSegment(filteredData);
+		short [] dataCopy = FileReader.readFileFromPath(path);
+		short [] signalData = DataAnalyzer.getSignalSegment(filteredData, dataCopy);
 		short  [] digitilizedData = DataAnalyzer.digitilizeData(signalData);
 		assertTrue(digitilizedData.length > 0);
 		
@@ -74,7 +62,8 @@ public class DataAnalyzerTest {
 		short  [] filteredData = DataAnalyzer.lowPassFilter(data);
 		assertTrue(filteredData.length > 0);
 		
-		short [] signalData = DataAnalyzer.getSignalSegment(filteredData);
+		short [] dataCopy = FileReader.readFileFromPath(path);
+		short [] signalData = DataAnalyzer.getSignalSegment(filteredData, dataCopy);
 		assertTrue(signalData.length > 0);
 		AFEFileWriter.writeStringToFile(Arrays.toString(signalData), path,"_signal.txt" );
 	}
@@ -83,7 +72,8 @@ public class DataAnalyzerTest {
 	public void testGetManchesterDecodedValue() {
 		short [] data = FileReader.readFileFromPath(path);
 		short  [] filteredData = DataAnalyzer.lowPassFilter(data);
-		short [] signalData = DataAnalyzer.getSignalSegment(filteredData);
+		short [] dataCopy = FileReader.readFileFromPath(path);
+		short [] signalData = DataAnalyzer.getSignalSegment(filteredData, dataCopy);
 		short  [] digitilizedData = DataAnalyzer.digitilizeData(signalData);
 		short  [] codedData = DataAnalyzer.getManchesterEncodedValue(digitilizedData);
 		AFEFileWriter.writeStringToFile(Arrays.toString(codedData), path,"_codearray.txt" );
@@ -95,7 +85,8 @@ public class DataAnalyzerTest {
 	public void testGetManchesterEncodedString() {
 		short [] data = FileReader.readFileFromPath(path);
 		short  [] filteredData = DataAnalyzer.lowPassFilter(data);
-		short [] signalData = DataAnalyzer.getSignalSegment(filteredData);
+		short [] dataCopy = FileReader.readFileFromPath(path);
+		short [] signalData = DataAnalyzer.getSignalSegment(filteredData, dataCopy);
 		short  [] digitilizedData = DataAnalyzer.digitilizeData(signalData);
 		String codedData = DataAnalyzer.getManchesterEncodedString(digitilizedData);
 		
@@ -117,13 +108,16 @@ public class DataAnalyzerTest {
 			if(filePath.contains(".pcm")){
 				try {
 					short [] data = FileReader.readFileFromPath(filePath);
+					short [] dataCopy = FileReader.readFileFromPath(filePath);
 					short  [] filteredData = DataAnalyzer.lowPassFilter(data);
-					short [] signalData = DataAnalyzer.getSignalSegment(filteredData);
+					short [] signalData = DataAnalyzer.getSignalSegment(filteredData, dataCopy);
 					short  [] digitilizedData = DataAnalyzer.digitilizeData(signalData);
 					String codedData = DataAnalyzer.getManchesterEncodedString(digitilizedData);
+					String decodedValue = DataAnalyzer.manchesterToBinaryDecoding(codedData.substring(1));
 					
-					assertTrue(codedData.length() > 0);
-					AFEFileWriter.appendTextToFile(filePath + ":    \n"+codedData, outPath);	
+//					assertTrue(codedData.length() > 0);
+					AFEFileWriter.appendTextToFile(filePath + ":    \n"+codedData, outPath);
+					AFEFileWriter.appendTextToFile(decodedValue, outPath);
 				} catch (Exception e) {
 					// TODO: handle exception
 					AFEFileWriter.appendTextToFile(filePath + ": Error   ", outPath);
@@ -134,15 +128,43 @@ public class DataAnalyzerTest {
 	
 	@Test
 	public void testBinaryToManchesterEncoding(){
-		//101010111011111000110100000100
+		//110001111110111101100101101011011001101101110001111011001011011 -> 7203422764646594139
 		String binaryString ="101010111011111000110100000100"; 
 		String encodedString = DataAnalyzer.binaryToManchesterEncoding(binaryString);
 		
 		assertTrue(encodedString.compareTo("011001100110010101100101010101101010010110011010101010011010")==0);
-										   //"0000111011011111001001111101101011111011000110001111011001101001"
-		                                  //01100110011001010100101010101010101001101010100110100101100110100110011010011010010110100110100110101001010110101010011010010110011010011010011001010101010
-		//assertTrue(encodedString.compareTo("01100110011001 0101100101010101101010010110011010101010011010")==0);
-        //01100110011001 010100101010101010101001101010100110100101100110100110011010011010010110100110100110101001010110101010011010010110011010011010011001010101010
+										  //01100110011001011010010101101010101010011010101001101001011001101001100110100110100101101001101001101010010101101010100110100101100110100110100110010101010110
+	}
+	
+	@Test
+	public void testManchesterToBinaryDecoding(){
+	
+		String manchesterEncodedString = "01100110011001011010010101101010101010011010101001101001011001101001100110100110100101101001101001101010010101101010100110100101100110100110100110010101010110";
+		String decodedString = DataAnalyzer.manchesterToBinaryDecoding(manchesterEncodedString);
+		assertTrue(decodedString.compareTo("0101010011000111111011110110010110101101100110110111000111101100101101101000001")==0);
+	}
+	
+	@Test
+	public void testBinaryToDecimal(){
+//		String binaryString = "0101010011000111111011110110010110101101100110110111000111101100101101101000001";
+		String binaryString =         "110001111110111101100101101011011001101101110001111011001011011";
+		String decimalString = String.valueOf(DataAnalyzer.getLongFromBinary(binaryString));
+		assertTrue(decimalString.compareTo("7203422764646594139")==0); 
+		//7203422764646594139 - wanted
+	}
+	
+	@Test
+	public void testDecodedStringToIRBeconId(){
+		String decodedString = "0101010011000111111011110110010110101101100110110111000111101100101101101000001";
+		String decimalString = String.valueOf(DataAnalyzer.getBeconIdFromDecodedString(decodedString));
+		assertTrue(decimalString.compareTo("7203422764646594139")==0); 
+	}
+	
+	@Test
+	public void testDoubleFromBinaryString(){
+		String binaryString =         "110001111110111101100101101011011001101101110001111011001011011";
+		double val = DataAnalyzer.doubleFromBinaryString((binaryString));
+		assertTrue(val == 7.2034227646465946E18); 
 	}
 
 }
