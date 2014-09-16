@@ -3,6 +3,8 @@ package audioFeaturesExtractor;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import weka.core.parser.java_cup.internal_error;
+
 import audioFeaturesExtractor.util.AFEFileWriter;
 import audioFeaturesExtractor.util.FileReader;
 
@@ -39,11 +41,25 @@ public class DataAnalyzer {
 	public static short [] getSignalSegment(short [] filteredData, short [] rawData){
 		short [] filteredSignalData = filteredData;
 		
-		int startIndex = 0;
-		int endIndex = 0;
+		int startIndex = getSignalSegmentStartIndex(filteredSignalData, 0);
+		int endIndex = getSignalSegmentEndIndex(filteredSignalData, startIndex);
 		
-		for (int i = 0; i < filteredSignalData.length; i++) {
-			if(startIndex==0 && i>thresholdNoOfZerosToCutSignal && filteredSignalData[i] != 0){
+		//usually the width of signal is more than 2000 data points
+		if(endIndex-startIndex<1500){
+			startIndex = getSignalSegmentStartIndex(filteredSignalData, startIndex);
+			endIndex = getSignalSegmentEndIndex(filteredSignalData, startIndex);
+		}
+		
+		short [] signalSegment = Arrays.copyOfRange(rawData, startIndex, endIndex);
+		return signalSegment;
+		
+	}
+
+	private static int getSignalSegmentStartIndex(short[] filteredSignalData, int indexToStartSearch) {
+		int startIndex = indexToStartSearch + thresholdNoOfZerosToCutSignal;
+		
+		for (int i = indexToStartSearch+ thresholdNoOfZerosToCutSignal; i < filteredSignalData.length; i++) {
+			if(i>thresholdNoOfZerosToCutSignal && filteredSignalData[i] != 0){
 				
 				//if all j are == 0 before i, then i is the starting index
 				boolean allJsAreZero = true;
@@ -52,10 +68,18 @@ public class DataAnalyzer {
 						allJsAreZero = false;
 					}
 				}
-				if(allJsAreZero) startIndex = i;
+				if(allJsAreZero) {
+					startIndex = i;
+					break;
+				}
 			}
 		}
-		
+		return startIndex;
+	}
+	
+	private static int getSignalSegmentEndIndex(short[] filteredSignalData,
+			int startIndex) {
+		int endIndex = 0;
 		for (int i = startIndex; i < filteredSignalData.length; i++) {
 			if(endIndex ==0 && filteredSignalData[i] == 0){
 				
@@ -69,10 +93,7 @@ public class DataAnalyzer {
 				if(allJsAreZero) endIndex = i;
 			}
 		}
-		
-		short [] signalSegment = Arrays.copyOfRange(rawData, startIndex, endIndex);
-		return signalSegment;
-		
+		return endIndex;
 	}
 	
 	public static short [] getManchesterEncodedValue(short [] data){
@@ -131,6 +152,13 @@ public class DataAnalyzer {
 	
 	public static String manchesterToBinaryDecoding(String manchesterString) throws Exception{
 		String decodedString = "";
+		//sometimes there is an extra 0 at the beginning
+		if("00".compareTo(manchesterString.substring(0,2))==0){
+			manchesterString= manchesterString.substring(1);
+		}
+		if("0".compareTo(manchesterString.substring(0,2))==0){
+			manchesterString= manchesterString.substring(1);
+		}
 		
 		ArrayList<Integer> binaryIntegers =new ArrayList<Integer>();
 		for (char chr : manchesterString.toCharArray()) {
@@ -144,7 +172,7 @@ public class DataAnalyzer {
 			}else if (binaryIntegers.get(i).intValue()==1 && binaryIntegers.get(i+1).intValue()==0) {
 				decodedString = decodedString.concat("1");
 			}else{
-				throw new Exception("Incorrect format for Manchester decoding");
+				throw new Exception("Incorrect format for Manchester decoding at index : " +i +"  "+ manchesterString);
 			}
 		}	
 		
@@ -178,8 +206,8 @@ public class DataAnalyzer {
 		String beacodId="";
 		try {
 			short [] dataCopy = data.clone();
-			short  [] filteredData = DataAnalyzer.lowPassFilter(data);
-			short [] signalData = DataAnalyzer.getSignalSegment(filteredData, dataCopy);
+			short  [] filteredData = DataAnalyzer.lowPassFilter(dataCopy);
+			short [] signalData = DataAnalyzer.getSignalSegment(filteredData, data);
 			short  [] digitilizedData = DataAnalyzer.digitilizeData(signalData);
 			String codedData = DataAnalyzer.getManchesterEncodedString(digitilizedData);
 			String decodedValue = DataAnalyzer.manchesterToBinaryDecoding(codedData.substring(1));
