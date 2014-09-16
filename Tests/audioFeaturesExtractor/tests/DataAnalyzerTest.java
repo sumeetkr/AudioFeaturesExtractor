@@ -16,7 +16,8 @@ import audioFeaturesExtractor.util.FileReader;
 
 public class DataAnalyzerTest {	
 	
-	private String path = "/Users/sumeet/Downloads/IPS_data/1410594745134.pcm";
+	//private String path = "/Users/sumeet/Downloads/IPS_data/1410594745134.pcm";
+	private String path ="/Users/sumeet/Documents/workspace/AudioFeaturesExtractor/Tests/TestData/1410835526998.pcm";
 	private short [] data;
 	
 	@Before
@@ -97,7 +98,8 @@ public class DataAnalyzerTest {
 	@Test
 	public void createManchesterEncodedStringsForAllFilesInTheFolder(){
 		
-		String rawFileDirectoryPath = "/Users/sumeet/Downloads/IPS_data";
+		String rawFileDirectoryPath = "/Users/sumeet/Documents/workspace/AudioFeaturesExtractor/Tests/TestData";
+		//String rawFileDirectoryPath = "/Users/sumeet/Downloads/IPS_data/";
 		String outPath = "/Users/sumeet/Downloads/IPS_data/codes.txt";
 		
 		File fileDir = new File(rawFileDirectoryPath);
@@ -114,13 +116,19 @@ public class DataAnalyzerTest {
 					short  [] digitilizedData = DataAnalyzer.digitilizeData(signalData);
 					String codedData = DataAnalyzer.getManchesterEncodedString(digitilizedData);
 					String decodedValue = DataAnalyzer.manchesterToBinaryDecoding(codedData.substring(1));
+					String beacodId = DataAnalyzer.getBeconIdFromDecodedString(decodedValue);
 					
 //					assertTrue(codedData.length() > 0);
+					AFEFileWriter.writeStringToFile(Arrays.toString(filteredData), filePath, "_filtered.txt");
+					AFEFileWriter.writeStringToFile(Arrays.toString(signalData), filePath,"_signal.txt" );
+					AFEFileWriter.writeStringToFile(Arrays.toString(digitilizedData), filePath,"_digitalized.txt" );
+					AFEFileWriter.writeStringToFile(codedData, filePath,"_code.txt" );
 					AFEFileWriter.appendTextToFile(filePath + ":    \n"+codedData, outPath);
 					AFEFileWriter.appendTextToFile(decodedValue, outPath);
+					AFEFileWriter.appendTextToFile(beacodId, outPath);
 				} catch (Exception e) {
 					// TODO: handle exception
-					AFEFileWriter.appendTextToFile(filePath + ": Error   ", outPath);
+					AFEFileWriter.appendTextToFile(filePath + ": Error   " + e.getMessage(), outPath);
 				}
 			}
 		}
@@ -140,7 +148,13 @@ public class DataAnalyzerTest {
 	public void testManchesterToBinaryDecoding(){
 	
 		String manchesterEncodedString = "01100110011001011010010101101010101010011010101001101001011001101001100110100110100101101001101001101010010101101010100110100101100110100110100110010101010110";
-		String decodedString = DataAnalyzer.manchesterToBinaryDecoding(manchesterEncodedString);
+		String decodedString = "";
+		try {
+			decodedString = DataAnalyzer.manchesterToBinaryDecoding(manchesterEncodedString);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		assertTrue(decodedString.compareTo("0101010011000111111011110110010110101101100110110111000111101100101101101000001")==0);
 	}
 	
@@ -165,6 +179,19 @@ public class DataAnalyzerTest {
 		String binaryString =         "110001111110111101100101101011011001101101110001111011001011011";
 		double val = DataAnalyzer.doubleFromBinaryString((binaryString));
 		assertTrue(val == 7.2034227646465946E18); 
+	}
+	
+	@Test
+	public void testGetBeaconIdFromRawSignal(){
+		short [] data = FileReader.readFileFromPath(path);
+	    String beacodId="7203422764646594139";
+	    try {
+			beacodId = DataAnalyzer.getBeaconIdFromRawSignal(data);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	    assertTrue(beacodId.compareTo("7203422764646594139")==0); 
 	}
 
 }

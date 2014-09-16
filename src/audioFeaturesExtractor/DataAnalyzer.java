@@ -3,6 +3,9 @@ package audioFeaturesExtractor;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import audioFeaturesExtractor.util.AFEFileWriter;
+import audioFeaturesExtractor.util.FileReader;
+
 public class DataAnalyzer {
 	private static int noiseThresholdAmplitude = 480;
 	private static int clockLengthGuess = 23;
@@ -44,7 +47,7 @@ public class DataAnalyzer {
 				
 				//if all j are == 0 before i, then i is the starting index
 				boolean allJsAreZero = true;
-				for (int j = i-10; j < i; j++) {
+				for (int j = i-thresholdNoOfZerosToCutSignal; j < i; j++) {
 					if(allJsAreZero && filteredSignalData[j] != 0){
 						allJsAreZero = false;
 					}
@@ -104,6 +107,7 @@ public class DataAnalyzer {
 				lastValue = digitalSignalData[i];
 			}
 		}
+		
 		return codedValue;
 	}
 	
@@ -125,25 +129,24 @@ public class DataAnalyzer {
 		return encodedString;
 	}
 	
-	public static String manchesterToBinaryDecoding(String manchesterString){
+	public static String manchesterToBinaryDecoding(String manchesterString) throws Exception{
 		String decodedString = "";
-		try {
-			ArrayList<Integer> binaryIntegers =new ArrayList<Integer>();
-			for (char chr : manchesterString.toCharArray()) {
-				Integer integer = Integer.decode(String.valueOf(chr));
-				binaryIntegers.add(integer);
-			}
-			
-			for (int i = 0; i < binaryIntegers.size(); i=i+2) {
-				if(binaryIntegers.get(i).intValue()==0 && binaryIntegers.get(i+1).intValue()==1){
-					decodedString = decodedString.concat("0");
-				}else {
-					decodedString = decodedString.concat("1");
-				}
-			}	
-		} catch (Exception e) {
-			// TODO: handle exception
+		
+		ArrayList<Integer> binaryIntegers =new ArrayList<Integer>();
+		for (char chr : manchesterString.toCharArray()) {
+			Integer integer = Integer.decode(String.valueOf(chr));
+			binaryIntegers.add(integer);
 		}
+		
+		for (int i = 0; i < binaryIntegers.size() -1; i=i+2) {
+			if(binaryIntegers.get(i).intValue()==0 && binaryIntegers.get(i+1).intValue()==1){
+				decodedString = decodedString.concat("0");
+			}else if (binaryIntegers.get(i).intValue()==1 && binaryIntegers.get(i+1).intValue()==0) {
+				decodedString = decodedString.concat("1");
+			}else{
+				throw new Exception("Incorrect format for Manchester decoding");
+			}
+		}	
 		
 		return decodedString;
 	}
@@ -160,15 +163,33 @@ public class DataAnalyzer {
 		return beaconId;
 	}
 	
-	public static double doubleFromBinaryString(String str){
+	public static double doubleFromBinaryString(String binaryString){
 	    double j=0;
-	    for(int i=0;i<str.length();i++){
-	        if(str.charAt(i)== '1'){
-	         j=j+ Math.pow(2,str.length()-1-i);
+	    for(int i=0;i<binaryString.length();i++){
+	        if(binaryString.charAt(i)== '1'){
+	         j=j+ Math.pow(2,binaryString.length()-1-i);
 	     }
 
 	    }
 	    return j;
+	}
+	
+	public static String getBeaconIdFromRawSignal(short [] data) throws Exception{
+		String beacodId="";
+		try {
+			short [] dataCopy = data.clone();
+			short  [] filteredData = DataAnalyzer.lowPassFilter(data);
+			short [] signalData = DataAnalyzer.getSignalSegment(filteredData, dataCopy);
+			short  [] digitilizedData = DataAnalyzer.digitilizeData(signalData);
+			String codedData = DataAnalyzer.getManchesterEncodedString(digitilizedData);
+			String decodedValue = DataAnalyzer.manchesterToBinaryDecoding(codedData.substring(1));
+			beacodId = String.valueOf(DataAnalyzer.getBeconIdFromDecodedString(decodedValue));
+			
+		} catch (Exception e) {
+			throw e;
+		}
+		
+		return beacodId;
 	}
 
 }
