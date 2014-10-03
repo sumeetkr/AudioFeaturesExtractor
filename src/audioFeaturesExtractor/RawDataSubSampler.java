@@ -18,7 +18,7 @@ import audioFeaturesExtractor.util.Settings;
 
 public class RawDataSubSampler {
 
-	// Takes data in Mobisens (timestamp, data .....) output format and converts
+	// Takes data from Mobisens (timestamp, data .....) output format and converts
 	// to (data...)
 	public static void subSampleSoundData(String inputFolder,
 			String outputFolder, int subSamplingPercentage) {
