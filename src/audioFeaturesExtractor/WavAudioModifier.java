@@ -1,15 +1,20 @@
 package audioFeaturesExtractor;
 
 import java.io.File;
+
+import weka.core.parser.java_cup.internal_error;
 import LabBook.WavFile;
 
 public class WavAudioModifier {
 
-	private String srcDirPath = "/Users/sumeet/Downloads/eval92/audio";
+	private static String srcDirPath = "/Users/sumeet/Downloads/eval92/audio";
+	private static String subSampledDirPath = "/Users/sumeet/Downloads/eval92/subsampled_audio";
+	private static String shreddedDirPath = "/Users/sumeet/Downloads/eval92/shredded_audio";
+	private static final int BUF_SIZE = 1024;
 	
 	public static void readWavFilesAndSubSample(String wavFilePath, String outputDir, double subSamplingPercentage){
 		try{
-//		 	Open the wav file specified as the first argument
+			// Open the wav file specified as the first argument
 			File inputFile = new File(wavFilePath);
 			WavFile readWavFile = WavFile.openWavFile(inputFile);
 			
@@ -27,24 +32,32 @@ public class WavAudioModifier {
 			// Get the number of audio channels in the wav file
 			int numChannels = readWavFile.getNumChannels();
 
+			int frameNo=0;
+			int frameNoWritten=0;
 			int framesRead;
 			int framesWritten;
-			double min = Double.MAX_VALUE;
-			double max = Double.MIN_VALUE;
-
-			// Output the minimum and maximum value
-			System.out.printf("Min: %f, Max: %f\n", min, max);
-			
-			
-			final int BUF_SIZE = 5001;
+		
 			double[] buffer = new double[BUF_SIZE * numChannels];
 			do
 			{
 				framesRead = readWavFile.readFrames(buffer, BUF_SIZE);
-				framesWritten = writeWavFile.writeFrames(buffer, BUF_SIZE);
-				System.out.printf("%d %d\n", framesRead, framesWritten);
+				System.out.printf("Frames read %d\n", framesRead);
+				
+				//if you want to sub-sample, you just drops some frames
+				//which frame to drop depends on subsampling percentage
+				//e.g. we keep 1, 2 frames out of 1,2, ... 10, if subsampling percentage is 20 %
+				
+				if(frameNo%10 < subSamplingPercentage/10){
+					framesWritten = writeWavFile.writeFrames(buffer, BUF_SIZE);
+					System.out.printf("Frames written %d \n", framesWritten);
+					frameNoWritten++;
+				}
+				
+				frameNo++;
 			}
 			while (framesRead != 0);
+			
+			System.out.printf("Frames read: %d, Frames written: %d\n", frameNo, frameNoWritten);
 			
 		}catch(Exception ex){
 			System.err.println(ex);
@@ -56,8 +69,23 @@ public class WavAudioModifier {
 		
 	}
 	
-	public static void subSampleFilesInDirectory(String srcPath, double [] percentages){
+	public static void subSampleFilesInDirectory(String srcDirPath, double [] percentages){
+		//clear subSampledDirPath
+		FileUtil.cleanDir(subSampledDirPath);
+		//create dir for sub-sampled files - if does not exist
+		for (int i = 0; i < percentages.length; i++) {
+			FileUtil.createDir(subSampledDirPath +"/" +percentages[i]);
+		}
 		
+		//get all files in src path dir
+		File inputDir = new File(srcDirPath);
+		File[] filesList = inputDir.listFiles();
+		for (File file : filesList) {
+			for (int i = 0; i < percentages.length; i++) {
+				readWavFilesAndSubSample(file.getPath(), subSampledDirPath +"/" +percentages[i], percentages[i]);
+			}
+		}
+
 	}
 	
 	public static void randomizeFilesInDir(String srcPath){

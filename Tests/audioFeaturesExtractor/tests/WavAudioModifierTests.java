@@ -10,6 +10,7 @@ import audioFeaturesExtractor.WavAudioModifier;
 
 public class WavAudioModifierTests {
 	
+	String srcDirPath = "/Users/sumeet/Downloads/eval92/audio";
 	String path = "/Users/sumeet/Downloads/eval92/audio/440c040a.wav";
 	String pathOutDir = "/Users/sumeet/Downloads/eval92/audio_modified";
 
@@ -23,7 +24,7 @@ public class WavAudioModifierTests {
 
 	@Test
 	public void testReadWavFilesAndSubSample() {
-		WavAudioModifier.readWavFilesAndSubSample(path, pathOutDir, 50);
+		WavAudioModifier.readWavFilesAndSubSample(path, pathOutDir, 20);
 	}
 
 	@Test
@@ -33,7 +34,9 @@ public class WavAudioModifierTests {
 
 	@Test
 	public void testSubSampleFilesInDirectory() {
-		fail("Not yet implemented");
+		
+		double[] subsamplingPercentages = { 10, 20, 30, 40, 50 ,60, 70, 80, 90, 100 };
+		WavAudioModifier.subSampleFilesInDirectory(srcDirPath, subsamplingPercentages);
 	}
 
 	@Test

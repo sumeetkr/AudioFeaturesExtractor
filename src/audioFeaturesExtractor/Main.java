@@ -30,14 +30,14 @@ public class Main {
 		int[] randomizationWidthPercentages ={0, 100};// { 30, 50, 80 };//{50};//
 
 		for (int subSamplingPec : subsamplingPercentages) {
-			cleanFolders(foldersToBeCleaned);
+			FileUtil.cleanFolders(foldersToBeCleaned);
 			// drop a percentage of sound
 			Logger.logResultsOnConsole("Subsampling percentage "
 					+ subSamplingPec);
 			RawDataSubSampler.subSampleSoundData(RAW_FILES_DIR_PATH,
 					PROCESSED_FILES_DIR_PATH, subSamplingPec);
 			for (int randomizationPec : randomizationWidthPercentages) {
-				cleanFolders(foldersToBeCleaned2);
+				FileUtil.cleanFolders(foldersToBeCleaned2);
 				Logger.logResultsOnConsole("Randomization percentage "
 						+ randomizationPec);
 				// create audible format
@@ -59,17 +59,4 @@ public class Main {
 		}
 	}
 
-	private static void cleanFolders(String[] paths) {
-		for (String path : paths) {
-			try {
-				File inputDir = new File(path);
-				File[] filesList = inputDir.listFiles();
-				for (File file : filesList) {
-					file.delete();
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-	}
 }
