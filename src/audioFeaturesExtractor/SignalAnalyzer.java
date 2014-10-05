@@ -193,6 +193,7 @@ public class SignalAnalyzer {
 
         return codedValue;// + "  " + avgPhaseWidth;
     }
+    
     public static String binaryToManchesterEncoding(String binaryString) {
         String encodedString = "";
         ArrayList<Integer> binaryIntegers = new ArrayList<Integer>();
@@ -233,7 +234,9 @@ public class SignalAnalyzer {
             } else if (binaryIntegers.get(i).intValue() == 1 && binaryIntegers.get(i + 1).intValue() == 0) {
                 decodedString = decodedString.concat("1");
             } else {
-                throw new Exception("Incorrect format for Manchester decoding at index : " + i + "  " + manchesterString);
+            	if(i<120){
+            		throw new Exception("Incorrect format for Manchester decoding at index : " + i + "  " + manchesterString);
+            	}
             }
         }
 		return decodedString;
@@ -273,24 +276,32 @@ public class SignalAnalyzer {
         return j;
     }
 
-    public static String getBeaconIdFromRawSignal(short[] data) throws Exception {
-        String beacodId = "";
+    public static SignalData getSignalInfoStringFromRawSignal(short[] data) throws Exception {
+        String beaconId = "";
+        double amplitude = 100.00;
+        
+        short[] signalData = new short[0];
         try {
             short[] dataCopy = data.clone();
             short[] filteredData = lowPassFilter(dataCopy);
-            short[] signalData = getSignalSegment(filteredData, data);
-//            String codedData = getManchesterEncodedStringUsingPhaseLock(signalData);
-            
-            short[] digitalizedData = digitilizeData(signalData);
+            signalData = getSignalSegment(filteredData, data);
+
+            //leave original signalData to be used in case of exception, clone it
+            short[] digitalizedData = digitilizeData(signalData.clone());
             String codedData = getManchesterEncodedString(digitalizedData);
-            
-            String decodedValue = manchesterToBinaryDecoding(codedData);
-            beacodId = String.valueOf(getBeconIdFromDecodedString(decodedValue));
+            String decodedValue = manchesterToBinaryDecoding(codedData.substring(1));
+            beaconId = String.valueOf(getBeconIdFromDecodedString(decodedValue));
 
         } catch (Exception e) {
-            throw e;
+            try{
+                String codedData = getManchesterEncodedStringUsingPhaseLock(signalData);
+                String decodedValue = manchesterToBinaryDecoding(codedData.substring(1));
+                beaconId = String.valueOf(getBeconIdFromDecodedString(decodedValue));
+            }catch(Exception ex){
+                throw ex;
+            }
         }
-
-        return beacodId;
-    }
+       
+        return new SignalData(amplitude, beaconId);
+    } 
 }

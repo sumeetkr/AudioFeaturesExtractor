@@ -11,6 +11,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import audioFeaturesExtractor.SignalAnalyzer;
+import audioFeaturesExtractor.SignalData;
 import audioFeaturesExtractor.util.AFEFileWriter;
 import audioFeaturesExtractor.util.FileReader;
 
@@ -222,7 +223,10 @@ public class SignalAnalyzerTest {
 		short [] data = FileReader.readFileFromPath("/Users/sumeet/Downloads/IPS_data/1410594731433.pcm");
 		String beacodId="";
 		try {
-			beacodId = SignalAnalyzer.getBeaconIdFromRawSignal(data);
+			
+			SignalData sigData = SignalAnalyzer.getSignalInfoStringFromRawSignal(data);
+			beacodId = sigData.getBeaconId();
+			
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
